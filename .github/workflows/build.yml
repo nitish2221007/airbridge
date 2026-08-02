@@ -1,0 +1,121 @@
+name: Build Airbridge
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  android:
+    name: Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Show toolchain
+        run: |
+          flutter --version
+          java -version
+
+      # The android/ folder is not committed. Regenerate it here so we never
+      # hand-maintain Gradle boilerplate.
+      - name: Generate android/ scaffolding
+        shell: bash
+        run: |
+          set -e
+          rm -rf ../scaffold
+          flutter create \
+            --project-name airbridge \
+            --org com.yniti \
+            --platforms=android \
+            --no-pub \
+            ../scaffold
+          cp -r ../scaffold/android ./android
+          ls -la ./android
+
+      # Several plugins (file_picker, device_info_plus) need a higher minSdk
+      # than the Flutter template default.
+      - name: Raise minSdk
+        shell: bash
+        run: |
+          set -e
+          for f in android/app/build.gradle android/app/build.gradle.kts; do
+            if [ -f "$f" ]; then
+              echo "patching $f"
+              sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/' "$f"
+              sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/' "$f"
+              grep -n "minSdk" "$f" || true
+            fi
+          done
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Analyze (non-blocking)
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings || true
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: airbridge-android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+
+  windows:
+    name: Windows EXE
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Show toolchain
+        run: flutter --version
+
+      - name: Generate windows/ scaffolding
+        shell: bash
+        run: |
+          set -e
+          rm -rf ../scaffold
+          flutter create \
+            --project-name airbridge \
+            --org com.yniti \
+            --platforms=windows \
+            --no-pub \
+            ../scaffold
+          cp -r ../scaffold/windows ./windows
+          ls -la ./windows
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Build release EXE
+        run: flutter build windows --release
+
+      - name: Package build output
+        shell: bash
+        run: |
+          set -e
+          cd build/windows/x64/runner/Release
+          ls -la
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: airbridge-windows
+          path: build/windows/x64/runner/Release/
+          if-no-files-found: error

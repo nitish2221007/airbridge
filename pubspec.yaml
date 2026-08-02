@@ -1,0 +1,39 @@
+name: airbridge
+description: Send files and text between your phone and PC.
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State + storage
+  provider: ^6.1.2
+  shared_preferences: ^2.3.2
+  path_provider: ^2.1.4
+  path: ^1.9.0
+
+  # Local network transport
+  shelf: ^1.4.1
+  shelf_router: ^1.1.4
+  web_socket_channel: ^3.0.1
+
+  # Files
+  file_picker: ^8.1.2
+  open_filex: ^4.5.0
+  desktop_drop: ^0.4.4
+
+  # Misc
+  device_info_plus: ^10.1.2
+  qr_flutter: ^4.1.0
+  crypto: ^3.0.5
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
