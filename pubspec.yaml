@@ -24,7 +24,10 @@ dependencies:
   # Files
   file_picker: ^8.1.2
   open_filex: ^4.5.0
-  desktop_drop: ^0.4.4
+  # NOTE: desktop_drop (drag-and-drop onto the desktop window) is deliberately
+  # absent. Its Android module compiles against android-33 while its own androidx
+  # dependencies demand 34+, which breaks the APK build. Revisit once the plugin
+  # fixes this, or replace with a Windows-only drop target.
 
   # Misc
   device_info_plus: ^10.1.2

@@ -43,18 +43,23 @@ jobs:
           cp -r ../scaffold/android ./android
           ls -la ./android
 
-      # Several plugins (file_picker, device_info_plus) need a higher minSdk
-      # than the Flutter template default.
-      - name: Raise minSdk
+      # Plugins pull in androidx libraries that refuse to be consumed by a module
+      # compiled against anything older than API 34, and several need a higher
+      # minSdk than the Flutter template default. Pin all three explicitly.
+      - name: Pin SDK versions
         shell: bash
         run: |
           set -e
           for f in android/app/build.gradle android/app/build.gradle.kts; do
             if [ -f "$f" ]; then
-              echo "patching $f"
+              echo "--- patching $f"
               sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/' "$f"
               sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/' "$f"
-              grep -n "minSdk" "$f" || true
+              sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 35/' "$f"
+              sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 35/' "$f"
+              sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 34/' "$f"
+              sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/' "$f"
+              grep -nE "minSdk|compileSdk|targetSdk" "$f" || true
             fi
           done
 
